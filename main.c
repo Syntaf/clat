@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "sigsegv.h"
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -39,8 +40,12 @@ int main()
 
     prot_unwritable = PROT_READ;
 
+    fprintf(stdout, "detected page size: %d\n", getpagesize());
+
     // mmap_zeromap( (void *) 0x12340000, 0x4000)
     p = (void *) mmap( (void *)0x12340000, 0x4000, PROT_READ_WRITE, map_flags, zero_fd, 0);
+
+    fprintf(stdout, "p aligned on page boundary at: %p\n", p);
 
     if(p == (void *)(-1)) {
         fprintf(stderr, "mmap failed.\n");
