@@ -2,7 +2,6 @@
 #define CLIB_H_
 
 #define PROT_READ_WRITE (PROT_READ | PROT_WRITE)
-#define map_flags MAP_FILE | MAP_PRIVATE
 
 #include <sys/types.h>
 
@@ -10,11 +9,15 @@ static struct global_info {
     int fd;
     int page_size;
     size_t page_multiple;
+    size_t fd_page_multiple;
+    void* map_addr;
+    void* fd_mapped_addr;
 } ginf;
 
 int clib_init();
-int handler(void *fault_address, int serious);
-int reserve(size_t addr_size, int fd, void* addr);
-void request(off_t offset, char* buff);
+int clib_handler(void *fault_address, int serious);
+
+void* clib_reserve(void* addr_hint, size_t map_size);
+void* clib_map(int fd, size_t size, off_t offset);
 
 #endif

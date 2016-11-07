@@ -7,59 +7,85 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
-int handler(void *fault_address, int serious)
+int clib_handler(void *fault_address, int serious)
 {
     // do stuff
+    fprintf(stdout, "make it brah\n");
     return 0;
 }
 
 int clib_init()
 {
-    sigsegv_install_handler(&handler);
+    sigsegv_install_handler(&clib_handler);
     ginf.page_size = getpagesize();
     return 0;
 }
 
-int reserve(size_t addr_size, int fd, void* map_addr)
+void* clib_reserve(void* addr_hint, size_t map_size)
 {
-    unsigned long page;
+    unsigned long page, res;
 
-    // check if reservation size request will be page aligned
-    if(addr_size % ginf.page_size != 0) {
-        if(addr_size < ginf.page_size) {
+    if(map_size % ginf.page_size != 0) {
+        if(map_size < ginf.page_size) {
             ginf.page_multiple = ginf.page_size;
         } else {
-            ginf.page_multiple = ginf.page_size * ((addr_size / ginf.page_size) + 1);
+            ginf.page_multiple = ginf.page_size * ((map_size / ginf.page_size) + 1);
         }
     } else {
-        // otherwise, we know addr_size is a page multiple already
-        ginf.page_multiple = addr_size;
+        ginf.page_multiple = map_size;
     }
 
-    // map region of memory
-    map_addr = (void *) mmap(NULL, ginf.page_multiple, PROT_READ_WRITE, map_flags, fd, 0);
+    // initially do not map any fd, mapping will occur in clib_map
+    ginf.map_addr = (void *) 
+        mmap(addr_hint, ginf.page_multiple, PROT_READ_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-    if(map_addr == (void *)(-1)) {
-        return -1;
-    }
-    
-    page = (unsigned long) map_addr;
+    page = (unsigned long) ginf.map_addr;
 
-    // protect memory so handler is always signaled upon request
-    if(mprotect((void *) page, ginf.page_multiple, PROT_NONE) < 0) {
-        return -1;
+    // protect entire region of memory
+    if((res = mprotect((void *) page, ginf.page_multiple, PROT_NONE)) < 0) {
+        return (void *) res;
     }
 
-    return 0;
+    return ginf.map_addr;
 }
 
-void request(off_t offset, char* buff)
-{
+void* clib_map(int fd, size_t size, off_t offset)
+{ 
+    struct stat sb;
+    unsigned long res;
     off_t pagealigned_offset;
 
-    pagealigned_offset = offset & ~(ginf.page_size - 1);
+    ginf.fd = fd;
 
-    fprintf(stdout, "%ld -> %ld\n", offset, pagealigned_offset);
+    // get stat information on fd
+    if((res = fstat(fd, &sb)) <= -1) {
+        return (void *)res;
+    }
+    // get page aligned offset of file
+    pagealigned_offset = offset & ~(ginf.page_size - 1);
+    // if the aligned offset is greater than the filesize, error
+    if(pagealigned_offset >= sb.st_size) {
+        return (void *)-1;
+    }
+
+    // get page aligned size of file mapping
+    if(size % ginf.page_size != 0) {
+        if(size < ginf.page_size) {
+            ginf.fd_page_multiple = ginf.page_size;
+        } else {
+            ginf.fd_page_multiple = ginf.page_size * ((size / ginf.page_size) + 1);
+        }
+    } else {
+        ginf.fd_page_multiple = size;
+    }
+
+    ginf.fd_mapped_addr = (void *)
+        mmap(ginf.map_addr, ginf.fd_page_multiple, 
+                PROT_READ_WRITE, MAP_FIXED, fd, pagealigned_offset); 
+
+    return ginf.fd_mapped_addr;
 }
+
