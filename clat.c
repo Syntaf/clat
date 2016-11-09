@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "clib.h"
+#include "clat.h"
 
 #include "sigsegv.h"
 #include <unistd.h>
@@ -10,21 +10,21 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int clib_handler(void *fault_address, int serious)
+int clat_handler(void *fault_address, int serious)
 {
     // do stuff
     fprintf(stdout, "make it brah\n");
     return 0;
 }
 
-int clib_init()
+int clat_init()
 {
-    sigsegv_install_handler(&clib_handler);
+    sigsegv_install_handler(&clat_handler);
     ginf.page_size = getpagesize();
     return 0;
 }
 
-void* clib_reserve(void* addr_hint, size_t map_size)
+void* clat_reserve(void* addr_hint, size_t map_size)
 {
     unsigned long page, res;
 
@@ -38,7 +38,7 @@ void* clib_reserve(void* addr_hint, size_t map_size)
         ginf.page_multiple = map_size;
     }
 
-    // initially do not map any fd, mapping will occur in clib_map
+    // initially do not map any fd, mapping will occur in clat_map
     ginf.map_addr = (void *) 
         mmap(addr_hint, ginf.page_multiple, PROT_READ_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
@@ -52,7 +52,7 @@ void* clib_reserve(void* addr_hint, size_t map_size)
     return ginf.map_addr;
 }
 
-void* clib_map(int fd, size_t size, off_t offset)
+void* clat_map(int fd, size_t size, off_t offset)
 { 
     struct stat sb;
     long int res;

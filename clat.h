@@ -14,10 +14,10 @@ static struct global_info {
     void* fd_mapped_addr;
 } ginf;
 
-int clib_init();
-int clib_handler(void *fault_address, int serious);
+int clat_init();
+int clat_handler(void *fault_address, int serious);
 
-void* clib_reserve(void* addr_hint, size_t map_size);
-void* clib_map(int fd, size_t size, off_t offset);
+void* clat_reserve(void* addr_hint, size_t map_size);
+void* clat_map(int fd, size_t size, off_t offset);
 
 #endif

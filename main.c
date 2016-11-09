@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "clib.h"
+#include "clat.h"
 
 #include <sys/mman.h>
 
@@ -22,8 +22,8 @@ int main()
     void* fd_addr;
 
     // init and reserve memory
-    clib_init();
-    map_addr = clib_reserve(NULL, mapping_size);
+    clat_init();
+    map_addr = clat_reserve(NULL, mapping_size);
 
     fd = open("dat.txt", O_RDONLY);
 
@@ -33,7 +33,7 @@ int main()
     size = sb.st_size;
     offset = 0;
 
-    fd_addr = clib_map(fd, size, offset);
+    fd_addr = clat_map(fd, size, offset);
 
     if(fd_addr == MAP_FAILED) {
         fprintf(stderr, "Mapping failed!\n");
