@@ -1,6 +1,6 @@
 
 OBJS = main.o clib.o
-CC = gcc -Wall -g 
+CC = gcc -Wall -Wno-unused-variable -g 
 LIBS = sigsegv
 DEPS = clib.h
 

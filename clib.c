@@ -55,22 +55,23 @@ void* clib_reserve(void* addr_hint, size_t map_size)
 void* clib_map(int fd, size_t size, off_t offset)
 { 
     struct stat sb;
-    unsigned long res;
+    long int res;
     off_t pagealigned_offset;
 
     ginf.fd = fd;
 
+    res = fstat(fd, &sb);
     // get stat information on fd
-    if((res = fstat(fd, &sb)) <= -1) {
+    if(res <= -1) {
         return (void *)res;
     }
+
     // get page aligned offset of file
     pagealigned_offset = offset & ~(ginf.page_size - 1);
     // if the aligned offset is greater than the filesize, error
     if(pagealigned_offset >= sb.st_size) {
         return (void *)-1;
     }
-
     // get page aligned size of file mapping
     if(size % ginf.page_size != 0) {
         if(size < ginf.page_size) {
@@ -83,8 +84,8 @@ void* clib_map(int fd, size_t size, off_t offset)
     }
 
     ginf.fd_mapped_addr = (void *)
-        mmap(ginf.map_addr, ginf.fd_page_multiple, 
-                PROT_READ_WRITE, MAP_FIXED, fd, pagealigned_offset); 
+        mmap(ginf.map_addr, ginf.fd_page_multiple, PROT_READ_WRITE, 
+             MAP_PRIVATE | MAP_FIXED, fd, pagealigned_offset); 
 
     return ginf.fd_mapped_addr;
 }
