@@ -5,8 +5,6 @@
 
 #include <sys/types.h>
 
-extern int g;
-
 static struct global_info {
     int fd;
     int page_size;
@@ -14,6 +12,7 @@ static struct global_info {
     size_t fd_page_multiple;
     void* map_addr;
     void* fd_mapped_addr;
+    char* raw;
 } ginf;
 
 int clat_init();

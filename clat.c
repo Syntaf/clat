@@ -10,13 +10,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-int g = 0;
-
 int clat_handler(void *fault_address, int serious)
-{
-    // do stuff
-    printf("hi\n");
-    g+= 1;
+{ 
+    printf("handler procd\n");
+    // if memory correctly released to be read/write, return 1
+    if(mprotect(ginf.fd_mapped_addr, ginf.fd_page_multiple, PROT_READ_WRITE) == 0) {
+        return 1;
+    }
     return 0;
 }
 
