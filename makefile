@@ -1,21 +1,25 @@
-
-OBJS = main.o clat.o
-CC = gcc -Wall -Wno-unused-variable -g 
+LIBDIR = ./lib
+SRCDIR = ./src
+TESTDIR = ./test
+CC = gcc
+FLAGS = -Wall -Wno-unused-variable -I$(LIBDIR)
 LIBS = sigsegv
-DEPS = clat.h
+DEPS = $(LIBDIR)/clat.h
 
-all: main
+all: build test
 
-main: main.o clat.o
-	$(CC) $(OBJS) -l$(LIBS) -o main
+build: clat.o
 
-main.o: main.c
-	$(CC) -c main.c 
+test: main.o clat.o
+	$(CC) $(FLAGS) $(TESTDIR)/main.o $(SRCDIR)/clat.o -l$(LIBS) -o test/main
 
-clat.o: clat.c $(DEPS)
-	$(CC) -c clat.c
+main.o: $(TESTDIR)/main.c
+	$(CC) $(FLAGS) -c $(TESTDIR)/main.c -o test/main.o
+
+clat.o: $(SRCDIR)/clat.c $(DEPS)
+	$(CC) $(FLAGS) -c $(SRCDIR)/clat.c -o $(SRCDIR)/clat.o
 
 clean:
-	rm *.o main
-
+	find $(SRCDIR) -type f -name '*.o' -delete
+	find $(TESTDIR) -type f -name '*.o' -delete
 
