@@ -10,10 +10,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+int g = 0;
+
 int clat_handler(void *fault_address, int serious)
 {
     // do stuff
-    fprintf(stdout, "make it brah\n");
+    printf("hi\n");
+    g+= 1;
     return 0;
 }
 
@@ -86,6 +89,10 @@ void* clat_map(int fd, size_t size, off_t offset)
     ginf.fd_mapped_addr = (void *)
         mmap(ginf.map_addr, ginf.fd_page_multiple, PROT_READ_WRITE, 
              MAP_PRIVATE | MAP_FIXED, fd, pagealigned_offset); 
+
+    if((res = mprotect(ginf.fd_mapped_addr, ginf.fd_page_multiple, PROT_NONE)) < 0) {
+        return (void *) res;
+    }
 
     return ginf.fd_mapped_addr;
 }

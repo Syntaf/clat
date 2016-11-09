@@ -5,6 +5,8 @@
 
 #include <sys/types.h>
 
+extern int g;
+
 static struct global_info {
     int fd;
     int page_size;
