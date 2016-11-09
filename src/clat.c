@@ -12,7 +12,7 @@
 
 int clat_handler(void *fault_address, int serious)
 { 
-    printf("handler procd\n");
+    write(STDOUT_FILENO, "SIGSEGV caught\n", 15);
     // if memory correctly released to be read/write, return 1
     if(mprotect(ginf.fd_mapped_addr, ginf.fd_page_multiple, PROT_READ_WRITE) == 0) {
         return 1;
@@ -29,8 +29,6 @@ int clat_init()
 
 void* clat_reserve(void* addr_hint, size_t map_size)
 {
-    unsigned long page, res;
-
     if(map_size % ginf.page_size != 0) {
         if(map_size < ginf.page_size) {
             ginf.page_multiple = ginf.page_size;
@@ -45,11 +43,9 @@ void* clat_reserve(void* addr_hint, size_t map_size)
     ginf.map_addr = (void *) 
         mmap(addr_hint, ginf.page_multiple, PROT_READ_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
-    page = (unsigned long) ginf.map_addr;
-
     // protect entire region of memory
-    if((res = mprotect((void *) page, ginf.page_multiple, PROT_NONE)) < 0) {
-        return (void *) res;
+    if(mprotect(ginf.map_addr, ginf.page_multiple, PROT_NONE) < 0) {
+        return (void *) -1;
     }
 
     return ginf.map_addr;
