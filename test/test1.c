@@ -45,8 +45,7 @@ int main()
     size = sb.st_size;
     offset = 0;
 
-    fd_addr = clat_map(fd, size, offset);
-
+    fd_addr = clat_assign(fd, size, offset);
     if(fd_addr == MAP_FAILED) {
         handle_error("fd mapping failed");
     }

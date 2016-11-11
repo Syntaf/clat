@@ -12,10 +12,16 @@
 
 int clat_handler(void *fault_address, int serious)
 { 
-    write(STDOUT_FILENO, "SIGSEGV caught\n", 15);
-    // if memory correctly released to be read/write, return 1
-    if(mprotect(ginf.fd_mapped_addr, ginf.fd_page_multiple, PROT_READ_WRITE) == 0) {
-        return 1;
+    write(STDOUT_FILENO, "SIGSEGV caught...\n", 18);
+    // unprotect memory for I/O into map addr
+    if(mprotect(ginf.fd_offset_addr, ginf.assigned_size, PROT_READ_WRITE) == 0) {
+        // if region of memory is within assigned memory
+        if((unsigned long)fault_address >= (unsigned long)ginf.fd_offset_addr) {
+            write(STDOUT_FILENO, "reading fd into reserved memory...\n", 35);
+            pread(ginf.fd, ginf.fd_offset_addr, ginf.assigned_size, ginf.fd_offset);
+            return 1;
+        }
+        write(STDOUT_FILENO, "fault_address lies beyond assigned memory...\n", 45);
     }
     return 0;
 }
@@ -51,45 +57,28 @@ void* clat_reserve(void* addr_hint, size_t map_size)
     return ginf.map_addr;
 }
 
-void* clat_map(int fd, size_t size, off_t offset)
+void* clat_assign(int fd, size_t size, off_t offset)
 { 
     struct stat sb;
     long int res;
-    off_t pagealigned_offset;
+    size_t aligned_size;
+
+    aligned_size = (size + ginf.page_size) & ~(ginf.page_size - 1);
 
     ginf.fd = fd;
+    ginf.assigned_size = aligned_size;
+    ginf.fd_offset = offset;
 
-    res = fstat(fd, &sb);
-    // get stat information on fd
-    if(res <= -1) {
-        return (void *)res;
-    }
-
-    // get page aligned offset of file
-    pagealigned_offset = offset & ~(ginf.page_size - 1);
-    // if the aligned offset is greater than the filesize, error
-    if(pagealigned_offset >= sb.st_size) {
+    if(fstat(fd, &sb) == -1) {
         return (void *)-1;
     }
-    // get page aligned size of file mapping
-    if(size % ginf.page_size != 0) {
-        if(size < ginf.page_size) {
-            ginf.fd_page_multiple = ginf.page_size;
-        } else {
-            ginf.fd_page_multiple = ginf.page_size * ((size / ginf.page_size) + 1);
-        }
-    } else {
-        ginf.fd_page_multiple = size;
+
+    if(offset >= sb.st_size) {
+        return (void *)-1;
     }
 
-    ginf.fd_mapped_addr = (void *)
-        mmap(ginf.map_addr, ginf.fd_page_multiple, PROT_READ_WRITE, 
-             MAP_PRIVATE | MAP_FIXED, fd, pagealigned_offset); 
+    ginf.fd_offset_addr = ginf.map_addr + offset;
+    return ginf.map_addr + offset;
 
-    if((res = mprotect(ginf.fd_mapped_addr, ginf.fd_page_multiple, PROT_NONE)) < 0) {
-        return (void *) res;
-    }
-
-    return ginf.fd_mapped_addr;
 }
 
