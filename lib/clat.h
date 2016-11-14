@@ -20,5 +20,6 @@ int clat_handler(void *fault_address, int serious);
 
 void* clat_reserve(void* addr_hint, size_t map_size);
 void* clat_assign(int fd, size_t size, off_t offset);
+int clat_clear();
 
 #endif

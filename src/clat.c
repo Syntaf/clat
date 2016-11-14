@@ -74,6 +74,7 @@ void* clat_assign(int fd, size_t size, off_t offset)
 
     // error checks
     if(size == 0) return (void *)-1;
+    if(size > ginf.page_multiple) return (void *)-1;
     if(fstat(fd, &sb) == -1) return (void *)-1;
     if(offset >= sb.st_size) return (void *)-1;
 
@@ -91,5 +92,15 @@ void* clat_assign(int fd, size_t size, off_t offset)
     // printf("map address: %p \noffset_address: %p\n", ginf.map_addr, ginf.map_addr + offset);
     return ginf.map_addr + offset;
 
+}
+
+int clat_clear()
+{
+    // protect entire region of memory
+    if(mprotect(ginf.map_addr, ginf.page_multiple, PROT_NONE) < 0) {
+        return -1;
+    }
+
+    return 0;
 }
 

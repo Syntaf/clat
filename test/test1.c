@@ -68,7 +68,7 @@ int main()
     // compare read data with fd_addr, upon the first access,
     // SIGSEGV will be sent which then performs file I/O
     if(verify_data(fd_addr, fd_data, size) == -1) {
-        handle_error("Test1 Failed!");
+        printf("Test2 --> Failed\n");
     }
 
     printf("Test1 --> Passed\n");
