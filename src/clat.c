@@ -11,17 +11,25 @@
 #include <fcntl.h>
 
 int clat_handler(void *fault_address, int serious)
-{ 
-    write(STDOUT_FILENO, "SIGSEGV caught...\n", 18);
-    // unprotect memory for I/O into map addr
-    if(mprotect(ginf.fd_offset_addr, ginf.assigned_size, PROT_READ_WRITE) == 0) {
-        // if region of memory is within assigned memory
-        if((unsigned long)fault_address >= (unsigned long)ginf.fd_offset_addr) {
-            write(STDOUT_FILENO, "reading fd into reserved memory...\n", 35);
-            pread(ginf.fd, ginf.fd_offset_addr, ginf.assigned_size, ginf.fd_offset);
-            return 1;
-        }
+{
+    unsigned long offset;
+    // if fault address is outside the reserved memory region, we do not want to handle it
+    if((unsigned long)fault_address < (unsigned long)ginf.map_addr ||
+       (unsigned long)fault_address > (unsigned long)(ginf.map_addr + ginf.page_multiple)) {
         write(STDOUT_FILENO, "fault_address lies beyond assigned memory...\n", 45);
+        return 0;
+    }
+
+    // calulate aligned offset
+    offset = (unsigned long)fault_address - (unsigned long)ginf.map_addr;
+    offset = offset & ~(ginf.page_size - 1);
+    ginf.fd_offset_addr = ginf.map_addr + offset; 
+    // fd_offset_addr is now the current page aligned offset which encapsulates the fault address
+
+    // unprotect memory at aligned offset, assigned_size is a page aligned value
+    if(mprotect(ginf.fd_offset_addr, ginf.assigned_size, PROT_READ_WRITE) == 0) {
+        pread(ginf.fd, ginf.fd_offset_addr, ginf.assigned_size, offset);
+        return 1;
     }
     return 0;
 }
@@ -70,18 +78,18 @@ void* clat_assign(int fd, size_t size, off_t offset)
     if(offset >= sb.st_size) return (void *)-1;
 
     aligned_size = ((size - 1) & ~(ginf.page_size - 1)) + ginf.page_size;
-    aligned_offset = (offset) & ~(ginf.page_size - 1);
+    //aligned_offset = (offset) & ~(ginf.page_size - 1);
 
     //fprintf(stdout, "Aligned size: %lu \nAligned offset: %lu \n", aligned_size, aligned_offset);
 
     ginf.fd = fd;
     ginf.assigned_size = aligned_size;
-    ginf.fd_offset = aligned_offset;
+    //ginf.fd_offset = aligned_offset;
 
 
-    ginf.fd_offset_addr = ginf.map_addr + aligned_offset;
+    //ginf.fd_offset_addr = ginf.map_addr + aligned_offset;
     // printf("map address: %p \noffset_address: %p\n", ginf.map_addr, ginf.map_addr + offset);
-    return ginf.map_addr + aligned_offset;
+    return ginf.map_addr + offset;
 
 }
 
