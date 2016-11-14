@@ -37,15 +37,18 @@ int main()
     clat_init();
     clat_reserve(NULL, mapping_size);
 
-    fd = open("dat.txt", O_RDONLY);
+    fd = open("dat2.txt", O_RDONLY);
 
     if(fstat(fd, &sb) == -1)
         handle_error("fstat failed");
 
-    size = sb.st_size;
-    offset = 0;
+    size = 55;
+    offset = 5;
 
     fd_addr = clat_assign(fd, size, offset);
+    fd_addr = clat_assign(fd, 4000, 4190);
+    fd_addr = clat_assign(fd, 7912, 312);
+    fd_addr = clat_assign(fd, 0x4000, 0x2000);
     if(fd_addr == MAP_FAILED) {
         handle_error("fd mapping failed");
     }
@@ -54,7 +57,7 @@ int main()
     my_data = (char*)fd_addr;
 
     // process data
-    process_data(my_data, size);
+    //process_data(my_data, size);
     
     //write(STDOUT_FILENO, fd_addr, size);
     //err = errno;

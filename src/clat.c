@@ -62,23 +62,26 @@ void* clat_assign(int fd, size_t size, off_t offset)
     struct stat sb;
     long int res;
     size_t aligned_size;
+    off_t aligned_offset;
 
-    aligned_size = (size + ginf.page_size) & ~(ginf.page_size - 1);
+    // error checks
+    if(size == 0) return (void *)-1;
+    if(fstat(fd, &sb) == -1) return (void *)-1;
+    if(offset >= sb.st_size) return (void *)-1;
+
+    aligned_size = ((size - 1) & ~(ginf.page_size - 1)) + ginf.page_size;
+    aligned_offset = (offset) & ~(ginf.page_size - 1);
+
+    //fprintf(stdout, "Aligned size: %lu \nAligned offset: %lu \n", aligned_size, aligned_offset);
 
     ginf.fd = fd;
     ginf.assigned_size = aligned_size;
-    ginf.fd_offset = offset;
+    ginf.fd_offset = aligned_offset;
 
-    if(fstat(fd, &sb) == -1) {
-        return (void *)-1;
-    }
 
-    if(offset >= sb.st_size) {
-        return (void *)-1;
-    }
-
-    ginf.fd_offset_addr = ginf.map_addr + offset;
-    return ginf.map_addr + offset;
+    ginf.fd_offset_addr = ginf.map_addr + aligned_offset;
+    // printf("map address: %p \noffset_address: %p\n", ginf.map_addr, ginf.map_addr + offset);
+    return ginf.map_addr + aligned_offset;
 
 }
 

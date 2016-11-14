@@ -37,7 +37,7 @@ int main()
     clat_init();
     clat_reserve(NULL, mapping_size);
 
-    fd = open("dat.txt", O_RDONLY);
+    fd = open("dat1.txt", O_RDONLY);
 
     if(fstat(fd, &sb) == -1)
         handle_error("fstat failed");
