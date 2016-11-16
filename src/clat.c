@@ -43,6 +43,10 @@ int clat_init()
 
 void* clat_reserve(void* addr_hint, size_t map_size)
 {
+    if(map_size == 0) {
+        return (void *)-1;
+    }
+
     if(map_size % ginf.page_size != 0) {
         if(map_size < ginf.page_size) {
             ginf.page_multiple = ginf.page_size;
