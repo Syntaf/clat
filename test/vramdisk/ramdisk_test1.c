@@ -45,7 +45,7 @@ int main()
     clat_init();
     clat_reserve(NULL, mapping_size);
 
-    fd = open("dat1.txt", O_RDONLY);
+    fd = open("/mnt/ramdisk/dat1.txt", O_RDONLY);
 
     if(fstat(fd, &sb) == -1)
         handle_error("fstat failed");
@@ -68,10 +68,10 @@ int main()
     // compare read data with fd_addr, upon the first access,
     // SIGSEGV will be sent which then performs file I/O
     if(verify_data(fd_addr, fd_data, size) == -1) {
-        printf("Test1 --> Failed\n");
+        printf("Test1 (ramdisk) --> Failed\n");
     }
 
-    printf("Test1 --> Passed\n");
+    printf("Test1 (ramdisk) --> Passed\n");
 
     free(fd_data);
 }

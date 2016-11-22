@@ -1,1 +1,1 @@
-cd test && run-parts .  
+make && cd test && make && run-parts .  
