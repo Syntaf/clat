@@ -6,13 +6,15 @@
 #include <sys/types.h>
 
 static struct global_info {
-    int fd;
-    int page_size;
-    size_t page_multiple;
-    void* map_addr;
-    void* fd_offset_addr;
-    size_t assigned_size;
-    off_t fd_offset;
+    int fd;                     // file descriptor
+    size_t fd_size;             // size of assigned memory passed by user
+    off_t fd_offset;            // offset of file to perform I/O on
+    size_t fd_aligned_size;     // page aligned size for use with mprotect 
+    
+    size_t page_multiple;       // page aligned size for total reserved memory
+    void* map_addr;             // beginning address of reserved memory
+    
+    int page_size;              // constant filled at _init(), size of page
 } ginf;
 
 int clat_init();
