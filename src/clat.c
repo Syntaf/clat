@@ -2,6 +2,8 @@
 #include <stdio.h>
 
 #include "clat.h"
+#include "clock.h"
+#include <time.h>
 
 #include "sigsegv.h"
 #include <unistd.h>
@@ -21,7 +23,7 @@ int clat_handler(void *fault_address, int serious)
 
     // unprotect memory at aligned offset, assigned_size is a page aligned value
     if(mprotect(ginf.map_addr, ginf.fd_aligned_size, PROT_READ_WRITE) == 0) {
-        pread(ginf.fd, ginf.map_addr, ginf.fd_aligned_size, ginf.fd_offset);
+        //pread(ginf.fd, ginf.map_addr, ginf.fd_size, ginf.fd_offset);
         return 1;
     }
     return 0;
@@ -70,13 +72,16 @@ void* clat_assign(int fd, size_t size, off_t offset)
     off_t aligned_offset;
 
     // error checks
-    if(size == 0) return (void *)-1;
     if(size > ginf.page_multiple) return (void *)-1;
     if(fstat(fd, &sb) == -1) return (void *)-1;
     if(offset >= sb.st_size) return (void *)-1;
 
     aligned_size = ((size - 1) & ~(ginf.page_size - 1)) + ginf.page_size;
     //aligned_offset = (offset) & ~(ginf.page_size - 1);
+
+    if(size == 0) {
+        aligned_size = ginf.page_size;
+    }
 
     // store file descriptor, aligned size, and file offset
     ginf.fd = fd;
