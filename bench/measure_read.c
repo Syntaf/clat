@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
+#include <string.h>
 
 #include "clat.h"
 #include "clock.h"
@@ -16,11 +17,11 @@
 
 #define SIZE 8192
 
-double average_initial_read = 0;
-double average_post_read = 0;
-double average_sys_read = 0;
-double average_total_sys_read = 0;
-double average_total_clat_read = 0;
+unsigned long average_initial_read = 0;
+unsigned long average_post_read = 0;
+unsigned long average_sys_read = 0;
+unsigned long average_total_sys_read = 0;
+unsigned long average_total_clat_read = 0;
 
 char clat_data[SIZE];
 char read_data[SIZE];
@@ -87,7 +88,7 @@ void test_read(int bytes_per_read, char* fd_addr, int fd)
     verify_data(clat_data, read_data);
 }
 
-int main()
+int main(int argc, char **argv)
 {
     int fd, i;
     size_t mapping_size = 0x4000;
@@ -95,10 +96,46 @@ int main()
     off_t offset;
     struct stat sb;
     void *fd_addr;
+    int max_width = 18;
+    char cline_buff[20];
+    int test_size = 100;
+    int read_size = 1;
 
-    int test_size = 1;
+    if(argc == 1) {
+        printf("Usage: ./measure_segfault --test-size=<size> --read-size=<size>\n");
+        return 0;
+    } else if (argc == 2) {
+        printf("Too little arguments supplied\n");
+        return 0;
+    } else if (argc == 3) {
+        strncpy(cline_buff, argv[1], 12);
+        cline_buff[12] = '\0';
+        if(strcmp(cline_buff, "--test-size=") == 0) {
+            strncpy(cline_buff, argv[1] + 12, (strlen(argv[1])-12));
+            cline_buff[strlen(argv[1])-12] = '\0';
+            test_size = atoi(cline_buff);
+        } else {
+            printf("Invalid argument \"%s\"\n", cline_buff);
+            return 0;
+        }
 
-    printf("Measuring large read of 8192 bytes, clat vs read()\n");
+        strncpy(cline_buff, argv[2], 12);
+        cline_buff[12] = '\0';
+        if(strcmp(cline_buff, "--read-size=") == 0) {
+            strncpy(cline_buff, argv[2] + 12, (strlen(argv[2])-12));
+            cline_buff[strlen(argv[2])-12] = '\0';
+            read_size = atoi(cline_buff);
+        } else {
+            printf("Invalid argument \"%s\"\n", cline_buff);
+            return 0;
+        }
+    } else {
+        printf("Too many arguments supplied\n");
+        return 0;
+    }
+
+    printf("Test size: %d\n", test_size);
+    printf("Measuring large read of 8192 bytes, %d bytes at a time\n", read_size);
 
     clat_init();
     clat_reserve(NULL, mapping_size);
@@ -117,8 +154,8 @@ int main()
     }
 
     for(i = 0; i < test_size; i++) {
-        test_read(1, fd_addr, fd);
-        //clat_clear();
+        test_read(read_size, fd_addr, fd);
+        clat_clear();
     }
 
     average_initial_read /= test_size;
@@ -127,6 +164,10 @@ int main()
     average_total_sys_read /= test_size;
     average_total_clat_read /= test_size;
 
-    test_read(1, fd_addr, fd);
-    printf("avg initial read(clat): %lf\navg post read(clat): %lf\navg sys read: %lf\ntotal sys read time: %lf\ntotal clat read time: %lf\n", average_initial_read, average_post_read, average_sys_read, average_total_sys_read, average_total_clat_read);
+
+    printf("%-33s %luns\n", "Average initial read via clat: ", average_initial_read);
+    printf("%-33s %luns\n", "Average system read: ", average_sys_read);
+    printf("%-33s %luns\n", "Average post read via clat: ", average_post_read);
+
+    return 0;
 }

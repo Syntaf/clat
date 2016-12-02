@@ -32,8 +32,7 @@ int main(int argc, char** argv)
     void *fd_addr;
     char c[1];
     char cline_buff[13];
-    char cline_val[100];
-    volatile int j;
+    int j;
 
     int test_size = 100;
 
