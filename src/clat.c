@@ -23,7 +23,7 @@ int clat_handler(void *fault_address, int serious)
 
     // unprotect memory at aligned offset, assigned_size is a page aligned value
     if(mprotect(ginf.map_addr, ginf.fd_aligned_size, PROT_READ_WRITE) == 0) {
-        //pread(ginf.fd, ginf.map_addr, ginf.fd_size, ginf.fd_offset);
+        pread(ginf.fd, ginf.map_addr, ginf.fd_size, ginf.fd_offset);
         return 1;
     }
     return 0;

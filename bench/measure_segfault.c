@@ -16,7 +16,7 @@
 #define handle_error(msg) \
     do { perror(msg); exit(EXIT_FAILURE); } while (0)
 
-void create_segfault(void *fd_addr, int fd, char c);
+void create_segfault(void *fd_addr, int fd, void *c);
 
 unsigned long seg_fault_ns;
 unsigned long pread_ns;
@@ -29,8 +29,10 @@ int main()
     off_t offset;
     struct stat sb;
     void *fd_addr;
-    char c;
+    char c[1];
     volatile int j;
+
+    int test_size = 100;
 
     seg_fault_ns = pread_ns = 0;
 
@@ -53,44 +55,25 @@ int main()
         handle_error("fd mapping failed");
     }
 
-    create_segfault(fd_addr, fd, c);
-    clat_clear();
-
-    printf("%lu\n", pread_ns);
-    printf("Time taken to handle seg fault: %luns\n\n", seg_fault_ns);
-   
-    seg_fault_ns = pread_ns = 0;
-    create_segfault(fd_addr, fd, c);
-    clat_clear();
-
-    printf("%lu\n", pread_ns);
-    printf("Time taken to handle seg fault: %luns\n\n", seg_fault_ns);
-    
-    seg_fault_ns = pread_ns = 0;
-    create_segfault(fd_addr, fd, c);
-    clat_clear();
-
-    printf("%lu\n", pread_ns);
-    printf("Time taken to handle seg fault: %luns\n\n", seg_fault_ns);
-
-    for(j = 0; j < 10; j++) {
-        create_segfault(fd_addr, fd, c);
+    for(j = 0; j < test_size; j++) {
+        create_segfault(fd_addr, fd, (void *)c);
         clat_clear();
     }
 
-    pread_ns /= 10;
-    seg_fault_ns /= 10;
+    pread_ns /= test_size;
+    seg_fault_ns /= test_size;
 
-    printf("%lu\n", pread_ns);
-    printf("Time taken to handle seg fault: %luns\n", seg_fault_ns);
+    printf("Average time of a read call: %luns\n", pread_ns);
+    printf("Average time taken to handle seg fault: %luns\n", seg_fault_ns);
 }
 
-void create_segfault(void *fd_addr, int fd, char c) 
+void create_segfault(void *fd_addr, int fd, void *c) 
 {
     struct timespec time1, time2, res;
+    char tmp;
 
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1);
-    c = *(char *)(fd_addr); 
+    tmp = *(char *)(fd_addr); 
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time2);
     res = clock_difference(time1, time2);
     seg_fault_ns += res.tv_nsec;

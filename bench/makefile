@@ -2,7 +2,7 @@ LIBDIR = ./../lib
 SRCDIR = ./../src
 TESTDIR = ./
 CC = gcc
-FLAGS = -Wall -Wno-unused-variable -I$(LIBDIR)
+FLAGS = -Wall -Wno-unused-variable -Wno-unused-but-set-variable -I$(LIBDIR)
 LIBS = sigsegv
 DEPS = $(SRCDIR)/clat.o clock.h
 
