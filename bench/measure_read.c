@@ -78,7 +78,7 @@ void test_read(int bytes_per_read, char* fd_addr, int fd)
 
         // perform clat read
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time1);
-        for(j = i; j < (i + bytes_per_read); j++) {
+        for(j = i*bytes_per_read; j < (i*bytes_per_read + bytes_per_read); j++) {
             clat_data[j] = *(fd_addr + j);
         }
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &time2);
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     clat_init();
     clat_reserve(NULL, mapping_size);
 
-    fd = open("dat1.txt", O_RDONLY);
+    fd = open("/mnt/ramdisk/dat2.txt", O_RDONLY);
 
     if(fstat(fd, &sb) == -1)
         handle_error("fstat failed");
